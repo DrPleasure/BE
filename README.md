@@ -6,7 +6,7 @@
 
 This app allows users to find and organize sporting events in their city. Users can create and RSVP to events, chat with other users, and receive notifications about upcoming events. The app also supports the creation and management of tournaments, including live match updates and leaderboards.
 
-<h3>Features: </h3>
+<h3>Features </h3>
 
 The Features of the Sporting Events App include:
 
@@ -31,7 +31,7 @@ The Features of the Sporting Events App include:
       Analytics and Insights
       Technologies
 
-<h3> Technologies used: </h3>
+<h3> Technologies used </h3>
 
      Express
      Node.js
