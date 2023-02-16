@@ -32,24 +32,29 @@ The Features of the Sporting Events App include:
       Technologies
 
 <h3> Technologies used: </h3>
-Express
-Node.js
-MongoDB
-Mongoose
-Setup
+
+     Express
+     Node.js
+     MongoDB
+     Mongoose
+     
+<h3> Setup </h3>
+
 To run this app on your local machine, follow these steps:
 
-Clone this repository to your local machine.
-Install the dependencies by running npm install.
-Start the app by running npm start.
-Navigate to http://localhost:3000 in your web browser.
-Usage
+      Clone this repository to your local machine.
+      Install the dependencies by running npm install.
+      Start the app by running npm start.
+      Navigate to http://localhost:3000 in your web browser.
+
+<h3>Usage</h3>
+
 To use the app, follow these steps:
 
-Sign up for an account.
-Browse or search for events in your area.
-RSVP to events you're interested in attending.
-Chat with other users to coordinate logistics.
-Create and manage tournaments if you want to organize a more structured event.
-License
-This project is licensed under the MIT License. See LICENSE for more information.
+      Sign up for an account.
+      Browse or search for events in your area.
+      RSVP to events you're interested in attending.
+      Chat with other users to coordinate logistics.
+      Create and manage tournaments if you want to organize a more structured event.
+      License
+
