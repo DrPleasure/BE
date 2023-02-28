@@ -8,7 +8,7 @@ const eventSchema = new mongoose.Schema({
   category: {
     type: String,
     required: true,
-    enum: ["Football", "Badminton", "Tennis", "Padel", "Spikeball"]
+    enum: ["Football", "Badminton", "Tennis", "Padel", "Spikeball", "Basket"]
   },
   image: {
     type: String,
@@ -54,10 +54,6 @@ const eventSchema = new mongoose.Schema({
     }
   }],
   
-  createdByName: {
-    type: String,
-    required: true
-  }
 });
 
 eventSchema.pre('save', function(next) {
