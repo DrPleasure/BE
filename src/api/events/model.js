@@ -26,13 +26,21 @@ const eventSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  latitude: {
+    type: Number,
+    required: false
+  },
+  longitude: {
+    type: Number,
+    required: false
+  },
   minPlayers: {
     type: Number,
-    required: true
+    required: false
   },
   maxPlayers: {
     type: Number,
-    required: true
+    required: false
   },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
