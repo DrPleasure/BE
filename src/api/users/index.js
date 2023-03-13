@@ -175,7 +175,7 @@ usersRouter.get(
   }
 );
 
-usersRouter.put("/:userId", adminOnlyMiddleware, async (req, res, next) => {
+usersRouter.put("/someone/:userId", JWTAuthMiddleware, async (req, res, next) => {
   try {
     const updatedUser = await userModel.findByIdAndUpdate(
       req.params.userId,

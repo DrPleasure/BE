@@ -1,5 +1,8 @@
 import express from "express";
-import eventModel from "./model.js"
+import models from "./model.js";
+
+const { eventModel, commentModel } = models;
+
 import { JWTAuthMiddleware } from "../../lib/jwtAuth.js";
 import q2m from "query-to-mongo";
 import createHttpError from "http-errors";
@@ -34,7 +37,6 @@ const getEvent = async (req, res, next) => {
  
 
 // GET all events
-// GET all events
 eventsRouter.get('/', async (req, res, next) => {
     try {
       const query = {};
@@ -48,7 +50,7 @@ eventsRouter.get('/', async (req, res, next) => {
         const endOfDay = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 23, 59, 59);
         query.date = { $gte: startOfDay, $lte: endOfDay };
       }
-      const events = await eventModel.find(query).populate({ path: 'createdBy', select: 'firstName lastName' }).populate({ path: 'attendees', select: 'firstName lastName avatar' });
+      const events = await eventModel.find(query).populate({ path: 'createdBy', select: 'firstName lastName' }).populate({ path: 'attendees', select: 'firstName avatar' });
       res.json(events);
     } catch (err) {
       next(createHttpError(500, err.message));
@@ -58,13 +60,23 @@ eventsRouter.get('/', async (req, res, next) => {
   
 
 // GET a single event by ID
-eventsRouter.get('/:id', JWTAuthMiddleware, getEvent, async (req, res) => {
+eventsRouter.get('/:id', JWTAuthMiddleware, async (req, res) => {
     try {
-      res.json(res.event);
+      const { id } = req.params;
+      const query = { _id: id }; 
+  
+      const event = await eventModel.findOne(query)
+        .populate({ path: 'createdBy', select: 'firstName lastName' })
+        .populate({ path: 'attendees', select: 'firstName avatar' })
+        .populate({ path: 'comments.user', select: 'firstName lastName avatar' });
+  
+      res.json(event);
     } catch (err) {
       res.status(500).json({ message: err.message });
     }
   });
+  
+  
   
 
 // CREATE a new event
@@ -85,7 +97,7 @@ eventsRouter.post('/', JWTAuthMiddleware, async (req, res) => {
     });
   
     // Use the Google Maps Geocoding API to get the latitude and longitude for the location
-    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(req.body.location)}&key=${process.env.GOOGLE_KEY}`;
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(req.body.location)}&key=${process.env.GOOGLE_MAPS_API_KEY}`;
     try {
       const response = await fetch(url);
       const data = await response.json();
@@ -127,6 +139,64 @@ eventsRouter.delete('/:id', JWTAuthMiddleware, getEvent, async (req, res) => {
   }
 });
 
+// Add an attendee to an event
+eventsRouter.post("/:id/attend", JWTAuthMiddleware, async (req, res) => {
+    const { id } = req.params;
+    const userId = req.user._id;
+  
+    try {
+      const event = await eventModel.findById(id);
+  
+      if (!event) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+  
+      // Check if the user is already attending the event
+      const isAttending = event.attendees.some(
+        (attendee) => attendee && attendee.toString() === userId
+      );
+      
+      
+      if (isAttending) {
+        return res.status(400).json({ message: "User is already attending the event" });
+      }
+  
+      // Add the user to the attendees array
+      event.attendees.push(userId);
+      await event.save();
+  
+      return res.status(200).json({ message: "User added to the attendees list" });
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ message: "Server Error" });
+    }
+  });
+
+  // DELETE /events/:id/attend
+  eventsRouter.delete("/:id/attend", JWTAuthMiddleware, async (req, res) => {
+    const { id } = req.params;
+    const userId = req.user._id;
+  
+    try {
+      const updatedEvent = await eventModel.findOneAndUpdate(
+        { _id: id },
+        { $pull: { attendees: userId } },
+        { new: true }
+      );
+  
+      if (!updatedEvent) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+  
+      res.json(updatedEvent);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  
+  
 
 eventsRouter.get('/locations/map', async (req, res, next) => {
     try {
@@ -139,6 +209,49 @@ eventsRouter.get('/locations/map', async (req, res, next) => {
       next(createHttpError(500, err.message));
     }
   });
+  
+  eventsRouter.post("/:id/comments", JWTAuthMiddleware, async (req, res) => {
+    const { id } = req.params;
+    const { comment, parentCommentId } = req.body;
+    const userId = req.user._id;
+  
+    try {
+      const event = await eventModel.findById(id).populate({
+        path: "comments.user",
+        select: "firstName lastName avatar",
+      });
+  
+      if (!event) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+  
+      const newComment = { user: userId, text: comment };
+      
+      if (parentCommentId) {
+        // Find the parent comment and add the new comment to its childComments array
+        const parentComment = await commentModel.findById(parentCommentId);
+        if (!parentComment) {
+          return res.status(404).json({ message: "Parent comment not found" });
+        }
+        newComment.parentComment = parentCommentId;
+        parentComment.childComments.push(newComment);
+        await parentComment.save();
+      } else {
+        // If there's no parentCommentId, add the new comment to the event's comments array
+        event.comments.push(newComment);
+      }
+  
+      await event.save();
+  
+      return res.status(200).json(event.comments);
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ message: "Server Error" });
+    }
+  });
+  
+  
+  
   
   
 

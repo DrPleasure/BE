@@ -1,5 +1,12 @@
 import mongoose from 'mongoose';
 
+const commentSchema = new mongoose.Schema({
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false },
+  text: { type: String, required: false },
+  parentComment: { type: mongoose.Schema.Types.ObjectId, ref: 'Comment', required: false },
+  childComments: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Comment', required: false }]
+});
+
 const eventSchema = new mongoose.Schema({
   title: {
     type: String,
@@ -47,21 +54,12 @@ const eventSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  comments: [commentSchema],
   attendees: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     default: [],
-    validate: {
-      validator: function(value) {
-        if (!Array.isArray(value) || value.includes(this.createdBy)) {
-          return false;
-        }
-        return true;
-      },
-      message: 'The event creator cannot add themselves as an attendee'
-    }
   }],
-  
 });
 
 eventSchema.pre('save', function(next) {
@@ -80,5 +78,9 @@ eventSchema.virtual('attendeesWithNames', {
 });
 
 const eventModel = mongoose.model('Event', eventSchema);
+const commentModel = mongoose.model('Comment', commentSchema);
 
-export default eventModel;
+export default {
+  eventModel,
+  commentModel
+};
