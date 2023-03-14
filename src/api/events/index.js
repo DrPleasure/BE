@@ -66,7 +66,7 @@ eventsRouter.get('/:id', JWTAuthMiddleware, async (req, res) => {
       const query = { _id: id }; 
   
       const event = await eventModel.findOne(query)
-        .populate({ path: 'createdBy', select: 'firstName lastName' })
+        .populate({ path: 'createdBy', select: 'firstName lastName avatar' })
         .populate({ path: 'attendees', select: 'firstName avatar' })
         .populate({ path: 'comments.user', select: 'firstName lastName avatar' });
   
