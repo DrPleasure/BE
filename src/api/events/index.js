@@ -1,5 +1,7 @@
 import express from "express";
 import models from "./model.js";
+import sgMail from "@sendgrid/mail";
+import dotenv from "dotenv";
 
 const { eventModel, commentModel } = models;
 
@@ -8,6 +10,8 @@ import q2m from "query-to-mongo";
 import createHttpError from "http-errors";
 import mongoose from "mongoose";
 
+dotenv.config();
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 
 const eventsRouter = express.Router();
@@ -66,7 +70,7 @@ eventsRouter.get('/:id', JWTAuthMiddleware, async (req, res) => {
       const query = { _id: id }; 
   
       const event = await eventModel.findOne(query)
-        .populate({ path: 'createdBy', select: 'firstName lastName avatar' })
+        .populate({ path: 'createdBy', select: 'firstName lastName avatar email' })
         .populate({ path: 'attendees', select: 'firstName avatar' })
         .populate({ path: 'comments.user', select: 'firstName lastName avatar' });
   
@@ -247,6 +251,18 @@ eventsRouter.get('/locations/map', async (req, res, next) => {
     } catch (error) {
       console.error(error);
       return res.status(500).json({ message: "Server Error" });
+    }
+  });
+  
+  eventsRouter.post("/send-email", async (req, res) => {
+    try {
+      console.log("Request body:", req.body);
+
+      await sgMail.send(req.body);
+      res.status(200).send("Email sent");
+    } catch (error) {
+      console.error("Error details:", error.response.body);
+      res.status(500).send("Failed to send email");
     }
   });
   
