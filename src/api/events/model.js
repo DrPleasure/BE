@@ -7,6 +7,7 @@ const commentSchema = new mongoose.Schema({
   childComments: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Comment', required: false }]
 });
 
+
 const eventSchema = new mongoose.Schema({
   title: {
     type: String,

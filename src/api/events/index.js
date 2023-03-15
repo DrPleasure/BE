@@ -65,20 +65,30 @@ eventsRouter.get('/', async (req, res, next) => {
 
 // GET a single event by ID
 eventsRouter.get('/:id', JWTAuthMiddleware, async (req, res) => {
-    try {
-      const { id } = req.params;
-      const query = { _id: id }; 
-  
-      const event = await eventModel.findOne(query)
-        .populate({ path: 'createdBy', select: 'firstName lastName avatar email' })
-        .populate({ path: 'attendees', select: 'firstName avatar' })
-        .populate({ path: 'comments.user', select: 'firstName lastName avatar' });
-  
-      res.json(event);
-    } catch (err) {
-      res.status(500).json({ message: err.message });
-    }
-  });
+  try {
+    const { id } = req.params;
+    const query = { _id: id }; 
+
+    const event = await eventModel.findOne(query)
+      .populate({ path: 'createdBy', select: 'firstName lastName avatar email' })
+      .populate({ path: 'attendees', select: 'firstName avatar' })
+      .populate({ path: 'comments.user', select: 'firstName lastName avatar' })
+      .populate({
+        path: 'comments.childComments',
+        model: 'Comment', // Make sure to use the correct model name for your comments
+        populate: {
+          path: 'user',
+          model: 'User', // Make sure to use the correct model name for your users
+          select: 'firstName lastName avatar',
+        },
+      });
+
+    res.json(event);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
   
   
   
@@ -220,26 +230,40 @@ eventsRouter.get('/locations/map', async (req, res, next) => {
     const userId = req.user._id;
   
     try {
-      const event = await eventModel.findById(id).populate({
-        path: "comments.user",
-        select: "firstName lastName avatar",
-      });
+      const event = await eventModel.findById(id).populate([
+        {
+          path: "comments.user",
+          select: "firstName lastName avatar",
+        },
+        {
+          path: "comments.childComments",
+          model: "Comment",
+          populate: {
+            path: "user",
+            model: "User",
+            select: "firstName lastName avatar",
+          },
+        },
+      ]);
   
       if (!event) {
         return res.status(404).json({ message: "Event not found" });
       }
   
-      const newComment = { user: userId, text: comment };
-      
+      const newComment = { user: userId, text: comment, childComments: [] };
+  
       if (parentCommentId) {
-        // Find the parent comment and add the new comment to its childComments array
-        const parentComment = await commentModel.findById(parentCommentId);
+        // Find the parent comment
+        const parentComment = event.comments.find((c) => c._id.toString() === parentCommentId);
+  
         if (!parentComment) {
           return res.status(404).json({ message: "Parent comment not found" });
         }
-        newComment.parentComment = parentCommentId;
-        parentComment.childComments.push(newComment);
-        await parentComment.save();
+  
+        const childComment = new commentModel(newComment);
+        await childComment.save();
+  
+        parentComment.childComments.push(childComment._id);
       } else {
         // If there's no parentCommentId, add the new comment to the event's comments array
         event.comments.push(newComment);
@@ -253,6 +277,8 @@ eventsRouter.get('/locations/map', async (req, res, next) => {
       return res.status(500).json({ message: "Server Error" });
     }
   });
+  
+  
   
   eventsRouter.post("/send-email", async (req, res) => {
     try {
