@@ -144,14 +144,16 @@ eventsRouter.put('/:id', JWTAuthMiddleware, async (req, res) => {
   
   
 // DELETE an event by ID
+
 eventsRouter.delete('/:id', JWTAuthMiddleware, getEvent, async (req, res) => {
   try {
-    await res.eventModel.remove();
+    await res.event.remove(); // Change this line to use 'res.event' instead of 'res.eventModel'
     res.json({ message: 'Deleted event' });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
+
 
 // Add an attendee to an event
 eventsRouter.post("/:id/attend", JWTAuthMiddleware, async (req, res) => {
