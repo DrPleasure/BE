@@ -42,24 +42,65 @@ const getEvent = async (req, res, next) => {
 
 // GET all events
 eventsRouter.get('/', async (req, res, next) => {
-    try {
-      const query = {};
-      if (req.query.category) {
-        query.category = req.query.category;
-      }
-      if (req.query.day) {
-        // get events that match the day, using the start and end of the day
-        const day = new Date(req.query.day);
-        const startOfDay = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, 0, 0);
-        const endOfDay = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 23, 59, 59);
-        query.date = { $gte: startOfDay, $lte: endOfDay };
-      }
-      const events = await eventModel.find(query).populate({ path: 'createdBy', select: 'firstName lastName' }).populate({ path: 'attendees', select: 'firstName avatar' });
-      res.json(events);
-    } catch (err) {
-      next(createHttpError(500, err.message));
+  try {
+    let queryConditions = [];
+
+    if (req.query.category) {
+      const categories = req.query.category.split(','); // Allow multiple categories separated by commas
+      queryConditions.push({ category: { $in: categories } });
     }
-  });
+
+    if (req.query.time) {
+      const now = new Date();
+      const timeOptions = req.query.time.split(','); // Allow multiple time ranges separated by commas
+      const timeConditions = []; // Create an array for time-related conditions
+
+      timeOptions.forEach(option => {
+        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+        const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+        if (option === 'today') {
+          const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+          const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+          queryConditions.push({ date: { $gte: startOfDay, $lte: endOfDay } });
+        }else if (option === 'tomorrow') {
+          const tomorrow = new Date(now);
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          const startOfTomorrow = new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate(), 0, 0, 0);
+          const endOfTomorrow = new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate(), 23, 59, 59);
+          queryConditions.push({ date: { $gte: startOfTomorrow, $lte: endOfTomorrow } });
+        } else if (option === 'thisWeek') {
+          const startOfWeek = new Date(now);
+          startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay() + (startOfWeek.getDay() === 0 ? -6 : 1));
+          const endOfWeek = new Date(startOfWeek);
+          endOfWeek.setDate(endOfWeek.getDate() + 6);
+          timeConditions.push({ date: { $gte: startOfWeek, $lte: endOfWeek } });
+        } if (option === 'nextWeek') {
+          const startOfNextWeek = new Date(now);
+          startOfNextWeek.setDate(startOfNextWeek.getDate() + (7 - startOfNextWeek.getDay() + (startOfNextWeek.getDay() === 0 ? -6 : 1)));
+          const endOfNextWeek = new Date(startOfNextWeek);
+          endOfNextWeek.setDate(endOfNextWeek.getDate() + 6);
+          timeConditions.push({ date: { $gte: startOfNextWeek, $lte: endOfNextWeek } });
+        }
+        
+      });
+      if (timeConditions.length > 0) {
+        queryConditions.push({ $or: timeConditions });
+      }
+    }
+
+    
+
+    const query = queryConditions.length > 0 ? { $and: queryConditions } : {};
+
+    const events = await eventModel.find(query).populate({ path: 'createdBy', select: 'firstName lastName' }).populate({ path: 'attendees', select: 'firstName avatar' });
+    res.json(events);
+  } catch (err) {
+    next(createHttpError(500, err.message));
+  }
+});
+
+
+
   
   
 
