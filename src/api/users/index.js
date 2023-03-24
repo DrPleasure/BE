@@ -12,36 +12,41 @@ import { cloudinaryUpload } from "../../lib/upload.js";
 const usersRouter = express.Router();
 
 usersRouter.post("/register", async (req, res, next) => {
+  try {
+    const userData = req.body;
+    userData.email = userData.email.charAt(0).toUpperCase() + userData.email.slice(1).toLowerCase(); // Format the email
+    const newUser = new userModel(userData);
+    const { _id, role } = await newUser.save();
+    const payload = { _id: newUser._id, role: newUser.role };
+    const accessToken = await createAccessToken(payload);
+    res.send({ user: newUser, accessToken });
+  } catch (error) {
+    next(error);
+  }
+});
+
+  
+
+  usersRouter.post("/login", async (req, res, next) => {
     try {
-      const newUser = new userModel(req.body);
-      const { _id, role } = await newUser.save();
-      const payload = { _id: newUser._id, role: newUser.role };
-      const accessToken = await createAccessToken(payload);
-      res.send({ user: newUser, accessToken });
+      const { email, password } = req.body;
+      console.log(req.body);
+      const formattedEmail = email.charAt(0).toUpperCase() + email.slice(1).toLowerCase(); // Format the email
+      const user = await userModel.findByCredentials(formattedEmail, password);
+      if (user) {
+        const payload = { _id: user._id, password: user.password };
+        console.log(payload);
+        const accessToken = await createAccessToken(payload);
+        console.log(user);
+        res.send({ accessToken, user });
+      } else {
+        next(createHttpError(401, "Bad credentials!"));
+      }
     } catch (error) {
       next(error);
     }
   });
   
-
-usersRouter.post("/login", async (req, res, next) => {
-  try {
-    const { email, password } = req.body;
-    console.log(req.body);
-    const user = await userModel.findByCredentials(email, password);
-    if (user) {
-      const payload = { _id: user._id, password: user.password };
-      console.log(payload);
-      const accessToken = await createAccessToken(payload);
-      console.log(user);
-      res.send({ accessToken, user });
-    } else {
-      next(createHttpError(401, "Bad credentials!"));
-    }
-  } catch (error) {
-    next(error);
-  }
-});
 
 usersRouter.get("/me", JWTAuthMiddleware, async (req, res, next) => {
   try {
