@@ -43,7 +43,5 @@ To use the app, follow these steps:
       Sign up for an account.
       Browse or search for events in your area.
       RSVP to events you're interested in attending.
-      Chat with other users to coordinate logistics.
-      Create and manage tournaments if you want to organize a more structured event.
-      License
+      
 
