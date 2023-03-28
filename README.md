@@ -14,22 +14,11 @@ The Features of the Sporting Events App include:
       Event Creation
       Event Discovery
       Event RSVP
-      Chat or Messaging
+      Commenting
       Notifications
       Geolocation
       Social Sharing
-      Review and Ratings
-      Monetization
-      Tournament Creation
-      Registration and Payment
-      Tournament Management
-      Live Match Updates
-      Spectator Mode
-      Leaderboards and Rankings
-      Tournament Calendar
-      Sponsorship and Advertising
-      Analytics and Insights
-      Technologies
+   
 
 <h3> Technologies used </h3>
 
