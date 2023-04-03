@@ -14,32 +14,23 @@ import {
 
 import mongoose from "mongoose";
 
-
-
 const server = express();
 const port = process.env.PORT || 3001;
 
+// Set up CORS to allow requests from the frontend domain
+const corsOptions = {
+  origin: "https://capstone-fe-drpleasure.vercel.app", // Replace this with your frontend domain
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+  credentials: true,
+  preflightContinue: false,
+  optionsSuccessStatus: 204,
+};
+server.use(cors(corsOptions));
 
-
-
-
-server.use(cors());
 server.use(express.json());
-
-
-server.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000')
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-  next()
-})
-
-
-
 
 server.use("/users", usersRouter)
 server.use("/events", eventsRouter)
-
 
 server.use(badRequestHandler);
 server.use(unauthorizedHandler);
